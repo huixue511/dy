@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load static %}
+    <div class="page-content">
+    <h1 class="page-title">
+        <i class="fa fa-home"></i>
+        用户地区分布
+    </h1>
+    <section class="no-padding-bottom">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="block" style="background: #ffffff; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); padding: 20px; margin-bottom: 30px; border: 1px solid #eee;">
+                        
+                        <div class="title">
+                            <strong class="d-block" style="color: #4e73df; font-size: 1.2rem; font-weight: 600; margin-bottom: 5px;">
+                                抖音用户地理分布热力图
+                            </strong>
+                            <span class="d-block text-muted small" style="letter-spacing: 0.5px;">
+                                基于全国各省市用户数据可视化展示
+                            </span>
+                        </div>
+    
+                        <div class="block-body p-0" style="margin-top: 15px;">
+                            <div id="main" style="width: 100%; height: 600px; border-radius: 8px; background: linear-gradient(to bottom, #ffffff, #fcfdff);"></div>
+                        </div>
+    
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    </div>
+    
+    <script src = "{% static 'js/echarts.js' %}"></script>
+    <script src="https://fastly.jsdelivr.net/npm/echarts@4.9.0/map/js/china.js"></script>
+    <script>
+    // 2. 初始化 ECharts 实例
+    var myChart = echarts.init(document.getElementById('main'));
+    
+    // 接收从 Django 后端传来的 mapData 数据
+    var data = {{ result|safe }};
+
+    // 3. 完整的地理坐标映射表 (已补全主要省份及城市)
+    var geoCoordMap = {
+        '阿克苏地区': [80.260604, 41.168779],
+        '和田地区': [79.922211, 37.114157],
+        '上海': [121.480237, 31.236305],
+        '东莞': [113.758231, 23.026997],
+        '东营': [118.588614, 37.454925],
+        '中山': [113.399023, 22.522262],
+        '临汾': [111.526153, 36.094052],
+        '临沂': [118.36299, 35.110531],
+        '丹东': [124.362564, 40.00569],
+        '丽水': [119.929503, 28.472979],
+        '乌鲁木齐': [87.623314, 43.832806],
+        '佛山': [113.128432, 23.027707],
+        '保定': [115.471052, 38.880055],
+        '兰州': [103.840692, 36.067312],
+        '包头': [109.846755, 40.663636],
+        '北京': [116.413554, 39.911013],
+        '北海': [109.126614, 21.486955],
+        '南京': [118.802891, 32.064735],
+        '南宁': [108.373351, 22.823037],
+        '山东': [117.00, 36.65],
+        '山西': [112.33, 37.54],
+        '陕西': [108.57, 34.17],
+        '四川': [104.04, 30.40],
+        '西藏': [91.08, 29.39],
+        '新疆': [87.36, 43.45],
+        '云南': [102.42, 25.04],
+        '浙江': [120.10, 30.16],
+        '广东': [113.23, 23.16],
+        '福建': [119.30, 26.08],
+        '湖南': [113.00, 28.21],
+        '湖北': [114.31, 30.52],
+        '江苏': [118.78, 32.04],
+        '安徽': [117.27, 31.86],
+        '河南': [113.65, 34.76],
+        '河北': [114.48, 38.03],
+        '天津': [117.20, 39.13],
+        '重庆': [106.54, 29.59],
+        '黑龙江': [126.63, 45.75],
+        '吉林': [125.35, 43.88],
+        '辽宁': [123.42, 41.79],
+        '内蒙古': [111.65, 40.82],
+        '宁夏': [106.27, 38.47],
+        '青海': [101.74, 36.56],
+        '甘肃': [103.73, 36.03],
+        '海南': [110.35, 20.02],
+        '台湾': [121.50, 25.03],
+        '香港': [114.17, 22.28],
+        '澳门': [113.54, 22.19]
+    };
+
+    // 4. 数据格式转换函数：将数值映射到经纬度坐标上
+    var convertData = function (data) {
+        var res = [];
+        for (var i = 0; i < data.length; i++) {
+            var geoCoord = geoCoordMap[data[i].name];
+            if (geoCoord) {
+                res.push({
+                    name: data[i].name,
+                    value: geoCoord.concat(data[i].value),
+                });
+            }
+        }
+        return res;
+    };
+
+    // 5. 配置 ECharts 图表项
+    var option = {
+        backgroundColor: '#f8f9fc',
+        title: {
+            text: '抖音用户地理分布',
+            subtext: '数据来自抖音平台',
+            left: 'center',
+            textStyle: { color: '#4e73df', fontSize: 20, fontWeight: 'bold' },
+            subtextStyle: { color: '#858796', fontSize: 12 }
+        },
+        tooltip: {
+            trigger: 'item',
+            formatter: function (params) {
+                return params.name + ' : ' + params.value[2] + '人';
+            },
+            backgroundColor: 'rgba(50,50,50,0.7)',
+            borderColor: '#333',
+            textStyle: { color: '#fff' }
+        },
+        visualMap: {
+            min: 0,
+            max: Math.max(...data.map(item => item.value)),
+            text: ['高', '低'],
+            realtime: false,
+            calculable: true,
+            inRange: {
+                color: ['#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695']
+            },
+            textStyle: { color: '#5a5c69' }
+        },
+        geo: {
+            map: 'china',
+            zoom: 1.2,
+            roam: true,
+            label: {
+                normal: { show: true, color: '#333', fontSize: 10 },
+                emphasis: { show: true, color: '#4e73df', fontSize: 12 }
+            },
+            itemStyle: {
+                normal: { areaColor: '#f0f2f5', borderColor: '#ccc', borderWidth: 0.5 },
+                emphasis: { areaColor: '#e6f7ff', borderColor: '#4e73df', borderWidth: 1 }
+            }
+        },
+        series: [
+            {
+                name: '用户数',
+                type: 'scatter',
+                coordinateSystem: 'geo',
+                data: convertData(data),
+                symbolSize: function (val) {
+                    return Math.min(Math.max(val[2] / 50, 5), 30);
+                },
+                label: {
+                    normal: {
+                        formatter: '{b}',
+                        position: 'right',
+                        show: false
+                    },
+                    emphasis: {
+                        show: true,
+                        color: '#4e73df',
+                        fontSize: 12
+                    }
+                },
+                itemStyle: {
+                    normal: { color: '#4e73df' },
+                    emphasis: { color: '#e74a3b', shadowBlur: 10, shadowColor: '#333' }
+                }
+            },
+            {
+                name: 'Top 5',
+                type: 'effectScatter',
+                coordinateSystem: 'geo',
+                // 筛选出数值最大的 5 个省份/城市
+                data: convertData(data.sort(function (a, b) {
+                    return b.value - a.value;
+                }).slice(0, 5)),
+                symbolSize: function (val) {
+                    return Math.min(Math.max(val[2] / 50, 10), 40);
+                },
+                showEffectOn: 'render',
+                rippleEffect: { brushType: 'stroke', scale: 5 },
+                hoverAnimation: true,
+                label: {
+                    normal: { formatter: '{b}', position: 'right', show: true, color: '#4e73df', fontWeight: 'bold' }
+                },
+                itemStyle: {
+                    normal: { color: '#e74a3b', shadowBlur: 10, shadowColor: '#e74a3b' }
+                },
+                zlevel: 1
+            }
+        ]
+    };
+
+    // 6. 渲染图表
+    myChart.setOption(option);
+
+    // 7. 响应式调整
+    window.addEventListener('resize', function () {
+        myChart.resize();
+    });
+</script>
+{% endblock %}

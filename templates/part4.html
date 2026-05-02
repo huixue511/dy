@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load static %}
+    <div class="page-content">
+    <h1 class="page-title">
+        <i class="fa fa-home"></i>
+        情感分析
+    </h1>
+    <section class="no-padding-bottom">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="block" style="background: #ffffff; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); padding: 20px; margin-bottom: 30px; border: 1px solid #eee;">
+                        
+                        <div class="title">
+                            <strong class="d-block" style="color: #4e73df; font-size: 1.2rem; font-weight: 600; margin-bottom: 5px;">
+                                情感得分区间
+                            </strong>
+                            <span class="d-block text-muted small" style="letter-spacing: 0.5px;">
+                                情感得分
+                            </span>
+                        </div>
+    
+                        <div class="block-body p-0" style="margin-top: 15px;">
+                            <div id="main1" style="width: 100%; height: 600px; border-radius: 8px; background: linear-gradient(to bottom, #ffffff, #fcfdff);"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="block" style="background: #ffffff; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); padding: 20px; margin-bottom: 30px; border: 1px solid #eee;">
+                        
+                        <div class="title">
+                            <strong class="d-block" style="color: #4e73df; font-size: 1.2rem; font-weight: 600; margin-bottom: 5px;">
+                                粉丝排行前十
+                            </strong>
+                            <span class="d-block text-muted small" style="letter-spacing: 0.5px;">
+                                粉丝数量最多的博主
+                            </span>
+                        </div>
+    
+                        <div class="block-body p-0" style="margin-top: 15px;">
+                            <div id="main2" style="width: 100%; height: 600px; border-radius: 8px; background: linear-gradient(to bottom, #ffffff, #fcfdff);"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    </div>
+    
+    <script src = "{% static 'js/echarts.js' %}"></script>
+    <script src="https://fastly.jsdelivr.net/npm/echarts@4.9.0/map/js/china.js"></script>
+   <script>
+var chartDom = document.getElementById('main1');
+var myChart = echarts.init(chartDom);
+var option;
+
+option = {
+    backgroundColor: '#fff',
+    title: {
+        text: '数据分布统计',
+        subtext: '可视化分析',
+        left: 'center',
+        top: '5%',
+        textStyle: { fontSize: 18, color: '#333' }
+    },
+    tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        // 自定义提示框样式
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        borderWidth: 0,
+        extraCssText: 'box-shadow: 0 0 10px rgba(0,0,0,0.1);',
+        textStyle: { color: '#666' }
+    },
+    grid: {
+        left: '5%',
+        right: '5%',
+        bottom: '10%',
+        top: '20%',
+        containLabel: true
+    },
+    xAxis: {
+        type: 'category',
+        data: {{ name_list|safe }},
+        axisTick: { show: false }, // 隐藏刻度线
+        axisLine: { lineStyle: { color: '#ccc' } },
+        axisLabel: { 
+            rotate: 30, // 稍微倾斜，模仿图片布局
+            color: '#999' 
+        }
+    },
+    yAxis: {
+        type: 'value',
+        axisLine: { show: false }, // 隐藏y轴线
+        axisTick: { show: false },
+        splitLine: { 
+            lineStyle: { color: '#f0f0f0' } // 减淡网格线
+        }
+    },
+    series: [
+        {
+            name: '数值',
+            type: 'bar',
+            barWidth: '45%', // 调整柱子宽度
+            showBackground: true,
+            backgroundStyle: {
+                // 浅蓝色背景槽
+                color: 'rgba(235, 242, 255, 0.6)',
+                borderRadius: [5, 5, 0, 0]
+            },
+            label: {
+                show: true,
+                position: 'top',
+                color: '#333',
+                fontWeight: 'bold',
+                offset: [0, -5]
+            },
+            itemStyle: {
+                // 柱子圆角
+                borderRadius: [5, 5, 0, 0],
+                // 线性渐变：从浅蓝到深蓝
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    { offset: 0, color: '#5eb1ef' }, // 顶部颜色
+                    { offset: 1, color: '#1e67e2' }  // 底部颜色
+                ])
+            },
+            data: {{ value_list|safe }}
+        }
+    ]
+};
+
+option && myChart.setOption(option);
+
+// 窗口自适应
+window.onresize = function() {
+    myChart.resize();
+};
+</script>
+    
+    <script>
+var chartDom = document.getElementById('main2');
+var myChart = echarts.init(chartDom);
+
+// 1. 预设图片中的渐变色组（积极、消极、中性）
+var colorConfigs = [
+    { start: '#40c9d9', end: '#4d80e4' }, // 积极（青蓝渐变）
+    { start: '#ffb1b1', end: '#f3a694' }, // 消极（粉橘渐变）
+    { start: '#b2d5f9', end: '#9fc5f0' }  // 中性（浅蓝渐变）
+];
+
+// 2. 数据处理：将后端 result 数据与颜色池绑定
+var rawData = {{ result|safe }};
+var formattedData = rawData.map(function(item, index) {
+    var colorPos = index % colorConfigs.length;
+    return {
+        name: item.name,
+        value: item.value,
+        itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: colorConfigs[colorPos].start },
+                { offset: 1, color: colorConfigs[colorPos].end }
+            ])
+        }
+    };
+});
+
+var option = {
+    backgroundColor: 'transparent', 
+    tooltip: {
+        trigger: 'item',
+        // --- 核心修改：优化 Tooltip 格式 ---
+        backgroundColor: 'rgba(50, 50, 50, 0.9)', // 深色悬浮框
+        borderWidth: 0,
+        textStyle: { color: '#fff' },
+        formatter: '{b}: {c} ({d}%)' // Tooltip 显示内容：名字: 数值 (百分比)
+    },
+    legend: {
+        top: '5%',
+        left: 'center',
+        icon: 'roundRect',
+        itemGap: 20
+    },
+    series: [
+        {
+            name: '数据分布',
+            type: 'pie',
+            radius: ['45%', '75%'],
+            center: ['50%', '55%'],
+            avoidLabelOverlap: false,
+            itemStyle: {
+                borderRadius: 6,
+                borderColor: '#fff',
+                borderWidth: 4,
+                shadowBlur: 10,
+                shadowColor: 'rgba(0, 0, 0, 0.05)'
+            },
+            
+            // --- 核心修改 1: 默认隐藏 Label ---
+            label: {
+                show: false, // 默认不显示
+                position: 'center', // 强制定位在中心
+                formatter: '{b}\n{d}%', // 格式：名字 (换行) 百分比%
+                color: '#333',
+                fontSize: 16,
+                fontWeight: 'bold',
+                lineHeight: 22
+            },
+            
+            // --- 核心修改 2: 高亮时显示 Label ---
+            emphasis: {
+                // 当鼠标悬停（高亮）时，使 label 显示出来
+                label: {
+                    show: true,
+                    fontSize: 20, // 悬停时字号稍微放大
+                },
+                // 同时保持扇形的外发光效果
+                itemStyle: {
+                    shadowBlur: 15,
+                    shadowColor: 'rgba(0, 0, 0, 0.2)'
+                }
+            },
+            labelLine: {
+                show: false
+            },
+            data: formattedData
+        }
+    ]
+};
+
+myChart.setOption(option);
+
+// 适应窗口大小
+window.addEventListener('resize', function() {
+    myChart.resize();
+});
+</script>
+{% endblock %}

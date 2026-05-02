@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load static %}
+    <div class="page-content">
+    <h1 class="page-title">
+        <i class="fa fa-home"></i>
+        评论分析
+    </h1>
+    <section class="no-padding-bottom">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="block" style="background: #ffffff; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); padding: 20px; margin-bottom: 30px; border: 1px solid #eee;">
+                        
+                        <div class="title">
+                            <strong class="d-block" style="color: #4e73df; font-size: 1.2rem; font-weight: 600; margin-bottom: 5px;">
+                                评论与分享趋势分析
+                            </strong>
+                            <span class="d-block text-muted small" style="letter-spacing: 0.5px;">
+                                评论与分享
+                            </span>
+                        </div>
+    
+                        <div class="block-body p-0" style="margin-top: 15px;">
+                            <div id="main1" style="width: 100%; height: 600px; border-radius: 8px; background: linear-gradient(to bottom, #ffffff, #fcfdff);"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-12">
+                    <div class="block" style="background: #ffffff; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); padding: 20px; margin-bottom: 30px; border: 1px solid #eee;">
+                        
+                        <div class="title">
+                            <strong class="d-block" style="color: #4e73df; font-size: 1.2rem; font-weight: 600; margin-bottom: 5px;">
+                                用户评论词云
+                            </strong>
+                            <span class="d-block text-muted small" style="letter-spacing: 0.5px;">
+                                用户评论
+                            </span>
+                        </div>
+    
+                        <div class="block-body p-0" style="margin-top: 15px;">
+                            <div id="main2" style="width: 100%; height: 600px; border-radius: 8px; background: linear-gradient(to bottom, #ffffff, #fcfdff);"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    </div>
+    
+    <script src = "{% static 'js/echarts.js' %}"></script>
+    <script src = "{% static 'js/echarts-wordcloud.min.js' %}"></script>
+    <script src="https://fastly.jsdelivr.net/npm/echarts@4.9.0/map/js/china.js"></script>
+    <script>
+var chartDom = document.getElementById('main1');
+var myChart = echarts.init(chartDom);
+var option;
+
+option = {
+    // 设置背景色为透明或浅色
+    backgroundColor: 'transparent',
+    tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+            type: 'cross',
+            label: {
+                backgroundColor: '#6a7985'
+            }
+        }
+    },
+    legend: {
+        data: ['评论数', '分享数'],
+        top: '5%',
+        textStyle: { color: '#666' }
+    },
+    grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true
+    },
+    xAxis: {
+        type: 'category',
+        boundaryGap: false,
+        data: {{ name_list|safe }},
+        axisLine: { lineStyle: { color: '#ccc' } }, // 坐标轴线颜色
+        axisLabel: { color: '#666' }
+    },
+    yAxis: {
+        type: 'value',
+        splitLine: {
+            lineStyle: {
+                type: 'dashed', // y轴线设为虚线
+                color: '#eee'
+            }
+        }
+    },
+    series: [
+        {
+            name: '评论数',
+            type: 'line',
+            smooth: true, // 开启平滑曲线
+            symbol: 'circle',
+            symbolSize: 8,
+            itemStyle: {
+                color: '#5470c6',
+                borderColor: '#fff',
+                borderWidth: 2
+            },
+            lineStyle: { width: 3 }, // 线条加粗
+            areaStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    { offset: 0, color: 'rgba(84, 112, 198, 0.4)' },
+                    { offset: 1, color: 'rgba(84, 112, 198, 0.1)' }
+                ])
+            },
+            data: {{ value_list1|safe }}
+        },
+        {
+            name: '分享数',
+            type: 'line',
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 8,
+            itemStyle: {
+                color: '#91cc75',
+                borderColor: '#fff',
+                borderWidth: 2
+            },
+            lineStyle: { width: 3 },
+            areaStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    { offset: 0, color: 'rgba(145, 204, 117, 0.4)' },
+                    { offset: 1, color: 'rgba(145, 204, 117, 0.1)' }
+                ])
+            },
+            data: {{ value_list2|safe }}
+        }
+    ]
+};
+
+option && myChart.setOption(option);
+
+// 保持自适应
+window.addEventListener('resize', function() {
+    myChart.resize();
+});
+</script>
+    
+    
+    <script>
+    // 1. 初始化图表
+    var myChart = echarts.init(document.getElementById('main2'));
+
+    // 2. 配置项
+    var option = {
+        backgroundColor: '#f8f9fa', // 极浅灰背景，更衬托马卡龙色
+        title: {
+            text: '用户评论热词分析',
+            subtext: '词频可视化 - 关键词热度分布',
+            left: 'center',
+            top: '3%',
+            textStyle: {
+                fontSize: 22,
+                color: '#34495e',
+                fontWeight: 'bold'
+            },
+            subtextStyle: {
+                fontSize: 14,
+                fontStyle: 'italic'
+            }
+        },
+        tooltip: {
+            show: true,
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            textStyle: { color: '#666' }
+        },
+        series: [{
+            type: 'wordCloud',
+            shape: 'ellipse',   // 使用椭圆形状
+            gridSize: 12,       // 增加间距，还原图片的呼吸感
+            sizeRange: [16, 85], // 字体大小范围
+            rotationRange: [0, 0], // 0旋转，保证水平对齐，提高可读性
+            
+            // 核心配置：直接在 textStyle 下定义，适配新版 ECharts
+            textStyle: {
+                fontFamily: 'Microsoft YaHei, sans-serif',
+                fontWeight: 600,
+                // 颜色随机函数：直接内置颜色池，确保不会因为作用域显示为蓝色
+                color: function () {
+                    var colors = [
+                        '#b8a1cf', // 柔和紫
+                        '#85a5cc', // 灰蓝色
+                        '#fbb4a7', // 肉粉色
+                        '#fbca5f', // 亮黄色
+                        '#acc6d2', // 浅天蓝
+                        '#d4b5d8', // 浅粉紫
+                        '#9fb9c3'  // 灰青色
+                    ];
+                    return colors[Math.floor(Math.random() * colors.length)];
+                }
+            },
+            // 悬停效果
+            emphasis: {
+                textStyle: {
+                    shadowBlur: 5,
+                    shadowColor: 'rgba(0,0,0,0.1)'
+                }
+            },
+            // 数据绑定
+            data: {{ word_counts_list|safe }}
+        }]
+    };
+
+    // 3. 渲染图表
+    myChart.setOption(option);
+
+    // 4. 窗口自适应
+    window.addEventListener('resize', function() {
+        myChart.resize();
+    });
+</script>
+{% endblock %}
